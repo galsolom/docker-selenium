@@ -1,12 +1,12 @@
 global:
   seleniumGrid:
     # Image tag for all selenium components
-    imageTag: 4.1.0-20211123
+    imageTag: 4.1.0
     # Image tag for browser's nodes
-    nodesImageTag: 4.1.0-20211123
+    nodesImageTag: 4.1.0
 
 # Deploy Router, Distributor, EventBus, SessionMap and Nodes separately
-isolateComponents: false
+isolateComponents: true
 
 # ConfigMap that contains SE_EVENT_BUS_HOST, SE_EVENT_BUS_PUBLISH_PORT and SE_EVENT_BUS_SUBSCRIBE_PORT variables
 busConfigMap:
@@ -31,7 +31,20 @@ components:
     annotations: {}
     # Router port
     port: 4444
-    # Liveness probe settings
+    env:
+    - name: SE_SESSION_QUEUE_HOST
+      value: selenium-session-queuer
+    - name: SE_SESSION_QUEUE_PORT
+      value: "5559"
+    - name: JAVA_OPTS
+      value: "-Xmx512m"
+    # - name:
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: secret-name
+    #       key: secret-key
+
+    # Liveness probe settingfs
     livenessProbe:
       enabled: true
       path: /status
@@ -52,7 +65,7 @@ components:
     # Resources for router container
     resources: {}
     # Kubernetes service type (see https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
-    serviceType: NodePort
+    serviceType: ClusterIP
     # Custom annotations for router service
     serviceAnnotations: {}
     # Tolerations for router container
@@ -138,9 +151,9 @@ components:
   # Configuration for Session Queuer component
   sessionQueuer:
     # Session Queuer image name
-    imageName: selenium/session-queuer
+    imageName: selenium/session-queue
     # Session Queuer image tag (this overwrites global.seleniumGrid.imageTag parameter)
-    # imageTag: 4.1.0-20211123
+    # imageTag: 4.1.1
 
     # Image pull policy (see https://kubernetes.io/docs/concepts/containers/images/#updating-images)
     imagePullPolicy: IfNotPresent
@@ -160,6 +173,10 @@ components:
 
   # Custom environment variables for all components
   extraEnvironmentVariables:
+    # - name: SE_SESSION_QUEUE_HOST
+    #   value: selenium-session-queuer
+    # - name: SE_SESSION_QUEUE_PORT
+    #   value: "5559"
     # - name: JAVA_OPTS
     #   value: "-Xmx512m"
     # - name:
@@ -173,7 +190,7 @@ hub:
   # Selenium Hub image name
   imageName: selenium/hub
   # Selenium Hub image tag (this overwrites global.seleniumGrid.imageTag parameter)
-  imageTag: 4.1.0-20211123
+  imageTag: 4.1.0
   # Image pull policy (see https://kubernetes.io/docs/concepts/containers/images/#updating-images)
   imagePullPolicy: IfNotPresent
   # Custom annotations for Selenium Hub pod
@@ -250,19 +267,19 @@ chromeNode:
   # Resources for chrome-node container
   resources:
     requests:
-      memory: "1Gi"
-      cpu: "1"
+      memory: "500Mi"
+      cpu: "250m"
     limits:
       memory: "1Gi"
-      cpu: "1"
+      cpu: "500m"
   # Tolerations for chrome-node container
   tolerations: []
   # Node selector for chrome-node container
   nodeSelector: {}
   # Custom environment variables for chrome nodes
   extraEnvironmentVariables:
-    # - name: JAVA_OPTS
-    #   value: "-Xmx512m"
+    - name: JAVA_OPTS
+      value: "-Dwebdriver.chrome.whitelistedIps="
     # - name:
     #   valueFrom:
     #     secretKeyRef:
@@ -282,7 +299,7 @@ chromeNode:
 # Configuration for firefox nodes
 firefoxNode:
   # Enable firefox nodes
-  enabled: true
+  enabled: false
   # Number of firefox nodes
   replicas: 1
   # Image of firefox nodes
@@ -337,7 +354,7 @@ firefoxNode:
 # Configuration for edge nodes
 edgeNode:
   # Enable edge nodes
-  enabled: true
+  enabled: false
   # Number of edge nodes
   replicas: 1
   # Image of edge nodes
